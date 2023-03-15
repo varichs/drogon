@@ -130,6 +130,15 @@ class Mapper
      */
     Mapper<T> &limit(size_t limit);
 
+
+    /**
+     * @brief Add a select to the query.
+     *
+     * @param select The columns
+     * @return Mapper<T>& The Mapper itself.
+     */
+    Mapper<T> &select(const std::vector<std::string> &select);
+
     /**
      * @brief Add a offset to the query.
      *
@@ -686,6 +695,7 @@ class Mapper
     size_t offset_{0};
     std::string orderByString_;
     bool forUpdate_{false};
+    std::vector<std::string> select_;
     void clear()
     {
         limit_ = 0;
@@ -755,12 +765,15 @@ class Mapper
 
     std::string replaceSqlPlaceHolder(const std::string &sqlStr,
                                       const std::string &holderStr) const;
+
+
+    std::string getSelectSQL(const std::vector<std::string> &select) const;                                 
 };
 
 template <typename T>
 inline T Mapper<T>::findOne(const Criteria &criteria) noexcept(false)
 {
-    std::string sql = "select * from ";
+    std::string sql = getSelectSQL(select_); //"select * from ";
     sql += T::tableName;
     bool hasParameters = false;
     if (criteria)
@@ -817,7 +830,7 @@ inline void Mapper<T>::findOne(const Criteria &criteria,
                                const SingleRowCallback &rcb,
                                const ExceptionCallback &ecb) noexcept
 {
-    std::string sql = "select * from ";
+    std::string sql = getSelectSQL(select_); //"select * from ";
     sql += T::tableName;
     bool hasParameters = false;
     if (criteria)
@@ -1658,6 +1671,15 @@ inline Mapper<T> &Mapper<T>::limit(size_t limit)
     limit_ = limit;
     return *this;
 }
+
+template <typename T>
+inline Mapper<T> &Mapper<T>::select(const std::vector<std::string> &select)
+{
+    // assert(limit > 0);
+    select_ = select;
+    return *this;
+}
+
 template <typename T>
 inline Mapper<T> &Mapper<T>::offset(size_t offset)
 {
@@ -1836,6 +1858,27 @@ inline Json::Value toJson(const std::vector<Value> &container)
         values.append(c.toJson());
     }
     return values;
+}
+
+template <typename T>
+inline std::string Mapper<T>::getSelectSQL(const std::vector<std::string> &select) const
+{
+    if (select.size() == 0)
+    {
+        return "select * from ";
+    }
+    else{
+        std::string sql {"select "};
+        for (auto const &colName : select)
+        {
+            sql += colName;
+            sql += ", ";
+        }
+        sql[sql.length() - 1] = ' ';  // Replace the last ','
+        sql += " from ";
+        return sql;
+    }
+   
 }
 
 }  // namespace orm

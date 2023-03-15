@@ -142,6 +142,18 @@ class CoroMapper : public Mapper<T>
     }
 
     /**
+     * @brief Add a select to the query.
+     *
+     * @param select The columns
+     * @return CoroMapper<T>& The CoroMapper itself.
+     */
+    CoroMapper<T> &select(const std::vector<std::string> &select)
+    {
+        Mapper<T>::select(select);
+        return *this;
+    }
+
+    /**
      * @brief Add a offset to the query.
      *
      * @param offset The offset.
@@ -242,7 +254,7 @@ class CoroMapper : public Mapper<T>
     {
         auto lb = [this, criteria](SingleRowCallback &&callback,
                                    ExceptPtrCallback &&errCallback) {
-            std::string sql = "select * from ";
+            std::string sql = this->getSelectSQL(this->select_); // "select * from ";
             sql += T::tableName;
             bool hasParameters = false;
             if (criteria)
